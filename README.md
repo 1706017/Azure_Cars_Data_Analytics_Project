@@ -52,5 +52,32 @@ Step4) Now we will create our Azure SQL db and while creation of azure sql db yo
 
 Step5) Now we will create 3 containers named bronze,silver,gold in the data lake 
 
+Step6) Now let us create our table inside the sql db that we have created and that will be our source 
+            Name of the table: source_cars_data
+
+             using the below command:
+	     
+             CREATE TABLE source_cars_data
+             (
+               Branch_ID varchar(200),
+               Dealer_ID varchar(200),
+               Model_ID varchar(200),
+               Revenue BIGINT,
+               Units_Sold BIGINT,
+               Date_ID varchar(200),
+               Day INT,
+               Month INT,
+               Year INT,
+               BranchName varchar(2000),
+               DealerName varchar(2000),
+               ProductName varchar(2000)
+             )
+
+Step7) Now we will create a adf pipeline to actually load the data into our table created in sql db that will actually pull the data from github and load into sql db table (source_cars_data)
+
+
+       
+
+
 
 
