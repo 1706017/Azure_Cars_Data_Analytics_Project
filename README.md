@@ -73,7 +73,77 @@ Step6) Now let us create our table inside the sql db that we have created and th
                ProductName varchar(2000)
              )
 
-Step7) Now we will create a adf pipeline to actually load the data into our table created in sql db that will actually pull the data from github and load into sql db table (source_cars_data)
+Day-02
+Date: 05th Feb 2025
+====================
+Step7) Now let us create our adf pipeline to ingest data into azure sql db from github 
+             this pipeline will load all the past data till today to load at once 
+             but for the next days we will create another pipeline to just load the incremental data 
+
+      ![image](https://github.com/user-attachments/assets/af3cdf48-40f1-4e71-a449-38120b6325d6)
+
+      Name of the pipeline: source_preparation_pipeline
+             
+
+ -> use the copy data activity and add it into the canvas but it requires source and sink location so we first need to create a linked service for both source and sink service as our source will be github and sink will be azure sql 
+
+A)For github repository select http connection in linked service 
+    name of the linked service: ls_github
+   base url : https://raw.githubusercontent.com/
+   authentication_type = anonymous
+
+	• then click on test connection and click on create  so our connection with github and adf is done now
+
+B)For Azure sql we need to create another linked service
+     name of the linked service:  ls_sqlDB
+     Azure subscription : Azure Learning Subscription (db1641a9-535f-457a-a683-7382817098d0)
+     Server name: server-cars-project
+    Database name : DB-Cars-Project
+    authentication : sql type
+  
+**Note: While creating the linked service for connection with azure sql you may face a connection issue like firewall not allowing the connection so what you need to resolve this issue just go the server that you have created and go to security tab-> networking tab -> click on the checkbox allow azure service and resource to access the server 
+
+Step8) Let us configure our copy data activity for the source_preparation_pipeline
+
+	•             Now we need to create a dynamic source dataset 
+                   type: http
+                   format: csv
+                   name of the source dataset : ds_git
+                  linked service : ls_github
+                  relative url : anshlambagit/Azure-DE-Project-Resources/refs/heads/main/Raw%20Data/SalesData.csv
+           
+	• then click on advanced button of the datset and then you will be in the edit place for the dataset this is the best place to do any such edits for your dataset that you have created
+
+	• Go to parameter tab and click on to create a new parameter 
+        name of the parameter: load_flag
+         value: <leave it as it is>
+  
+	• Then again go to connection tab of the dataset and go to relative url and click on add dynamic content 
+	Expression for the dynamic content will be : 
+
+anshlambagit/Azure-DE-Project-Resources/refs/heads/main/Raw%20Data/@{dataset().load_flag}  //here highlited one will be treated as a variable
+
+	• Now go to the pipeline and in the pipeline go to the source tab now you can able to see that inside your source dataset a new parameter is there just give your value as salesdata.csv and just preview your data 
+
+	• Now we need to create our sink dataset 
+    Type: azure sql db
+    name of the source dataset : ds_sqlDB
+    Linked service : ls_sqlDB
+    Table name : dbo.source_cars_data
+
+       • After that just click on debug button of your pipeline to see if the pipeline run is success or not 
+Once your pipeline is success just go the database and try to query your table you will able to see that data is loaded now into the table from github to sql db
+
+![image](https://github.com/user-attachments/assets/82faf5c7-3d96-4308-a3fe-fd3c8a7e4e39)
+
+
+
+
+
+
+
+
+
 
 
        
