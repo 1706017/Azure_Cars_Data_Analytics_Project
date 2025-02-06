@@ -202,6 +202,111 @@ OUTPUT: 1849 which is actually the total number of records in the source  table
 
 Step11) So now we will be creating a stored procedure so that will be actually updating the last_load value in the watermark table
 
+CREATE PROCEDURE [dbo].[UpdateWatermarkTable]
+ @lastload Varchar(2000)
+AS
+BEGIN
+ --Start the Transaction 
+   BEGIN TRANSACTION;
+ --UPDATE THE INCREMENTAL COLUMN IN THE TABLE
+  update [dbo].[water_table]
+  SET last_load = @lastload
+  COMMIT TRANSACTION;
+  END;
+
+
+
+	Ø So in the adf canvas we have added one copy activity and before that we have dragged and drop two lookup activity one lookup activity named as last_load and other lookup activity named current_load_or_maximum_current_date
+
+	So firstly we will configure the first lookup activity named last_load 
+	For that click on that lookup activity and then go to settings tab -> then select you dataset that we have created for ds_sqlDB then click on open button to open that dataset and select the correct table but that table we do not want to be given explicitly rather we will create parameter for the same so that our pipeline is more dynamic so the parameter that we will create is the table_name and once you have created the parameter then again go to the connection tab and select the schema name as dbo but for the table name just click on add dynamic attribute and then from expression builder just select your parameter named table_name that you have created 
+	
+	Then for the firstlookup activity then go to the settings tab and give the value to your parameter named table_name as value as water_table
+	Uncheck the box first row only 
+	Also in use query select query and the query will be select * from water_table
+
+	
+	Ø Now again let us configure the second lookup activity named current_load_or_maximum_current_date 
+	
+	Ø In the same way that we have done for the last_load lookup activty 
+	Select the same data set that ds_sqlDB but this time we do not need to create the parameter as the parameter is already there that is table_name but here the value for the table_name will be source_cars_data 
+	   Uncheck the first row only 
+	   In use query select query and use the below query 
+	            
+	      select max(Date_ID) AS max_date from source_cars_data  and we can also see the output from individual activities just disable the other activities and click on debug 
+
+
+	Output here will be : 
+	{ "count": 1, "value": [ { "max_date": "DT01245" } ], "effectiveIntegrationRuntime": }
+	
+	
+	Now we will configure the copy data activity that is placed after the lookup activities in the pipeline 
+	
+	Source_dataset : ds_sqlDB (SAME that we have created earlier)
+	Table_name parameter value will be : source_cars_data 
+	Use query as query but here use expression builder for giving the query to the copy data activity 
+	
+	Query will be as follows
+
+	
+	
+	Ø SELECT * FROM source_cars_data WHERE Date_ID > '@{activity('last_load').output.value[0].last_load}' AND Date_ID <= '@{activity('current_load_or_maximum_current_date').output.value[0].max_date}'
+	
+
+	Ø Now we will configure the sink of the copy data activity and that will be our data lake click on create a new dataset for the sink type will azure data lake gen2 
+
+	• Select file format to be parquet so that data will be written in parquet format in adls gen2 bronze container 
+
+
+	• Name of the dataset : ds_bronze
+
+	• Click on + new to create a linked service for the adls gen2 connectivity with adf 
+
+Name of the linked service : ls_datalake
+Subscription : Azure Learning Subscription
+Storage account name : caramritdatalake
+Then just test the connection of linked service with adls gen2 
+
+Then for the dataset it will ask for the file path 
+Give container name as bronze
+Directory name as rawdata 
+File name : leave as it is that is blank 
+
+![image](https://github.com/user-attachments/assets/ae02ca62-a6b9-4dd8-9238-cecd554d8a2c)
+
+
+Then we will add a stored procedure activity after the copy data activity in the canvas to update the water mark table last_load value with the maximum_current_date 
+
+Let us now configure the stored procedure activity 
+Name : update_watermark_table
+Linked_service: ls_sqlDB
+Stored_procedure_name: dbo.UpdateWatermarkTable
+Also import the parameter for the stored procedure and that will be last_load
+Value will be dynamic attribute : 
+
+@activity('current_load_or_maximum_current_date').output.value[0].max_date
+
+	• We have done this so that in the next run the stored procedure will run and update the watermark table last_load value from the current_load value that is the max current date
+
+![image](https://github.com/user-attachments/assets/787ff470-05ff-4e67-87c4-b12b7139fdd2)
+
+
+WE CAN NOW see that pipeline run is success so now also our watertable value should also be updated to maximum date id from the current load 
+
+Let us query the watermark table 
+
+![image](https://github.com/user-attachments/assets/3993011e-130d-4bd1-b1a5-ecf4fccce7c9)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
