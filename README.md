@@ -136,6 +136,84 @@ Once your pipeline is success just go the database and try to query your table y
 
 ![image](https://github.com/user-attachments/assets/82faf5c7-3d96-4308-a3fe-fd3c8a7e4e39)
 
+Day-03
+Date: 06th Feb 2025
+==================
+Step9) Now let us create a new data pipeline in adf for implementing the logic of loading data incrementally 
+             
+             Name of the pipeline : Incremental_data_pipeline
+             
+	•  Now our source is sql db and we want  to incrementally load data from sql db to the bronze container via the   pipeline
+	• Incremental pipeline means two pipeline
+     
+	• one pipeline means initial load pipeline that means we need to pull all the data from sql db to the datalake bronze container 
+
+	• After first pipeline all the pipeline runs will be considered as incremental load pipeline run 
+
+![image](https://github.com/user-attachments/assets/8ff7d68c-3f28-4d92-8a17-8854ed8d2846)
+
+Now the concept behind the incremental data load is that we will use two date parameter 
+
+ Ø one of the parameter will tell initial load start date that means what will be the last date when i have loaded the data into data lake but you might ask we do not have  any last date when we have loaded the data for the first run correct suppose we have our data from 2017 so the last load date should be any date before 2017 so in real scenario we do not use one or two year date we took more previous date 
+	
+ So let us take last load date as 2000-01-01 so will this data will bring all the data if we have used the query as select * from 2000-01-01 the answer is yes it will bring all the data 
+
+
+	Ø Second date parameter is maximum of current date that means if we have condition 
+	Select * from date > last_load_date(2000-01-01) and date <= (2020-05-31 assume this to be current date) so in the first run it will bring all the data using this pipeline
+
+	Ø Once our data is loaded into the data lake for the first time then we will create a stored procedure in sql db what it will do is that from where the last load date is coming from it is coming from stored procedure and the maximum current date is coming from source data so once the pipeline is succesfull run for the first time then in the stored procedure we need to update our last_load_Date with the maximum_current_Date such that the query that we have in our copy data activity that is select * from table where date > last_load_date and date <=maximum_current_date so that it will only load data from june 1st 2020
+
+
+![image](https://github.com/user-attachments/assets/64a59c49-ca59-4d7b-b2b1-7f5fdbf76657)
+
+Implementing the Incremental Data Pipeline Logic in ADF
+ 
+Step10) So now let us implement the logic for incremental data pipeline so before creating the stored procedure let us first create a watermark table and the watermark table is used to just hold that value that is the intial date 
+
+	Ø As shown below we use the below query to create the water mark table name water_table
+
+
+CREATE TABLE water_table
+(
+ last_load Varchar(2000)
+)
+
+	Ø In real scenario we can use data type for the last load date as date type but here we have date_id as varchar in the source data so that is unique identifier for all the dates so basically that is identifier for date dimension 
+
+
+	Ø After creating the water mark table we need to insert the value into the watermark table column last_load but what we want as date 2000-01-01 but what we have is date_id like DT0000 so we need to insert minimum of date_id that we can find using the below query and then the date will be more before that such that it can load all the data for the first run of the pipeline
+
+
+select min(Date_ID) from [dbo].[source_cars_data];
+
+Output: DT00001 SO this is first date of data from where the sales started so what we will put as last_load_date for the first time is DT00000 
+
+INSERT INTO water_table
+VALUES('DT00000');
+
+	Ø So now if we try to just check using the below query if we are able to fetch all the data from the source table or not the query is 
+
+
+SELECT COUNT(*) FROM [dbo].[source_cars_data] where Date_Id > 'DT00000';
+
+OUTPUT: 1849 which is actually the total number of records in the source  table 
+
+
+Step11) So now we will be creating a stored procedure so that will be actually updating the last_load value in the watermark table
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
