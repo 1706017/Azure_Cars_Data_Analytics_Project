@@ -297,6 +297,105 @@ Let us query the watermark table
 
 ![image](https://github.com/user-attachments/assets/3993011e-130d-4bd1-b1a5-ecf4fccce7c9)
 
+Day-04
+Date: 08th Feb 2025
+===================
+Step12) Now we will create our azure databricks resource
+
+Resource group: RG-Azure_Car_Project
+Workspace Name: carsDatabricks
+Region : West US-2
+Pricing Tier : Trial(premium + free dbus)
+Managed Resource Group name : managed_azure_car_project
+
+Step13) Now we will be creating unity metastore because when we create unity metastore only then we will create compute and then we attach the databricks workspace to this unity metastore and when we do this our unity catalog is turned on
+
+
+Step14) Now we will see how to create a unity metastore and to create a unity metastore  you need to go to admin console  of databricks and how to go to admin console of databricks
+
+Go to Microsoft Entra id in azure -> go to users tab from left -> then click on your name ->copy the user principle : 
+amritmanash_gmail.com#EXT#@amritmanash9gmail.onmicrosoft.com
+
+-> then go to webbrowser and search for http://accounts.azuredatabricks.net/
+
+-> now it will ask for microsoft entra id so just provide the above #email id then provide the password and then you will be landing in the admin console of databricks
+
+-> then on the admin console page of databricks go to the catalog from left side -> click on create a metastore then do below configuration for metastore
+
+A)Name : carsProject
+B)Region : west us2
+C)Adls gen2 path : <container_name>@<storage_Account_name>.dfs.core.windows.net/<path>
+	•            here the container name you can create a dedicated one for the   unity catalog metastore
+D)Access connector id : this we need to create as a resource so that databricks can be able to access your adls gen2 
+  -> name: carsaccess_connectors
+  -> region :west us2
+  -> then click on review + create 
+
+
+	• Once the databricks access connector is created then we will assign it a role of storage blob contributor so that it can contribute to the datalake that we have created for the project 
+	• Then go to datalake -> click on IAM from left side 
+	-> click on + ADD
+	 -> add a role assignment 
+	-> search for storage blob contributor -> click next
+	 -> assign access to 
+	-> managed identities as we are assigning access to a resource
+	-> then select you access connector resource that you have created 
+ -> then click on review + assign now we have given access to access connector to access the adls gen2 containers
+
+ 	  
+	• Then now click on your metastore that you have created and on the permission tab add your normal mail as an admin as it is required to create the catalog 
+	• Now we need to attach our databricks workspace to the unity catalog metastore so for that in the admin console go to the catalog
+	• -> click on your metastore that you have created -> then go to the workspaces tab -> then click on assign to workspace tab -> then select your databricks workspace that you have created 
+
+
+	• Then once you have attached your unity catalog metastore to your databricks workspace then a pop up window will appear and will ask are you wanted to enable unity catalog ? Then just click on enable button 
+Now once the databricks workspace it attached with unity catalog metastore from the admin console page then go to the databricks workspace page and click on compute 
+
+
+  -> click on create compute 
+  -> and do the configurations for the cluster 
+
+Step15) Now we will create mount points for the containers that we have created so that we are able to access the files inside the containers (bronze,silver,gold) and write to the paths from the notebook just by providing the path to the location 
+
+	• For that we need to create a storage credential and the storage credential will be your access connector that we have created 
+So you are saying hey bro just create an external location on the bronze container then databricks say okay i will create but it will ask how i will access this container like how i will show that i am eligible to access this datalake that is because databricks will have access connector and that has the storage credentials that has the access for the bronze and other container so after that it will be able to read data from bronze containers 
+
+	For that go to catalog 
+	               -> then click on external data 
+	               -> then we can see we have a tab named external location there are two ways to create external location one is through UI and second is through notebooks as well 
+              -> but to create first the external location we need to create credentials so go the credentials tab and click on create credentials 
+
+
+ config for storage credentials :
+	                  a) name : amritcreds
+	                  b) access connector id : give id of your access connector that you have created
+	              then your storage credential is created 
+	•   then again go to the catalog -> external location -> create external location  
+
+Same we need to create external location for silver and gold container
+
+Step16)now we will create a workspace (it is nothing just a folder )
+              Name for workspace : carsProject
+
+then create a notebooks inside this workspace 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
